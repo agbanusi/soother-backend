@@ -1,31 +1,30 @@
 import { Injectable } from '@nestjs/common';
+import { JsonRpcProvider, Contract, Wallet, ContractFactory } from 'ethers';
 
-// blockchain.service.ts
 @Injectable()
 export class BlockchainService {
-  private providers: { [chainId: number]: ethers.providers.JsonRpcProvider } =
-    {};
-  private signers: { [chainId: number]: ethers.Wallet } = {};
+  private providers: { [chainId: number]: JsonRpcProvider } = {};
+  private signers: { [chainId: number]: Wallet } = {};
 
   constructor() {
     this.initProviders();
   }
 
   private initProviders() {
-    const chains = JSON.parse(process.env.SUPPORTED_CHAINS);
+    const chains = JSON.parse(process.env.SUPPORTED_CHAINS || '[]');
     chains.forEach((chain) => {
-      this.providers[chain.id] = new ethers.providers.JsonRpcProvider(
-        chain.rpc,
-      );
-      this.signers[chain.id] = new ethers.Wallet(
-        process.env.DEPLOYER_PK,
-        this.providers[chain.id],
-      );
+      this.providers[chain.id] = new JsonRpcProvider(chain.rpc);
+      if (process.env.DEPLOYER_PK) {
+        this.signers[chain.id] = new Wallet(
+          process.env.DEPLOYER_PK,
+          this.providers[chain.id],
+        );
+      }
     });
   }
 
   getContract(address: string, abi: any, chainId = 1) {
-    return new ethers.Contract(
+    return new Contract(
       address,
       abi,
       this.signers[chainId] || this.providers[chainId],
@@ -33,10 +32,27 @@ export class BlockchainService {
   }
 
   async deployContract(contractName: string, args: any[], chainId = 1) {
-    const factory = await ethers.getContractFactory(
-      contractName,
+    if (!this.signers[chainId]) {
+      throw new Error(`No signer available for chain ID ${chainId}`);
+    }
+
+    const factory = await this.getContractFactory(contractName, chainId);
+    const contract = await factory.deploy(...args);
+
+    // Wait for deployment to be confirmed
+    await contract.deploymentTransaction().wait();
+
+    return contract;
+  }
+
+  private async getContractFactory(contractName: string, chainId = 1) {
+    // This is a simplified implementation
+    // In a real-world scenario, you would need to fetch the ABI and bytecode
+    const artifacts = require(`../../artifacts/${contractName}.json`);
+    return new ContractFactory(
+      artifacts.abi,
+      artifacts.bytecode,
       this.signers[chainId],
     );
-    return factory.deploy(...args);
   }
 }

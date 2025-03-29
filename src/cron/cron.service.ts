@@ -1,19 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { BlockchainService } from 'src/common/blockchain.service';
-import { Aggregator } from 'src/factory/entities/aggregator.entity';
+import { SupabaseService } from 'src/common/supabase.service';
+import { Cron } from '@nestjs/schedule';
+import { EACAggregatorProxyABI } from 'src/common/contract-abis';
+import { OracleType } from 'src/factory/entities/aggregator.entity';
 
-// cron.service.ts
 @Injectable()
 export class CronService {
   constructor(
     private readonly blockchainService: BlockchainService,
-    @InjectRepository(Aggregator)
-    private aggregatorRepo: Repository<Aggregator>,
+    private readonly supabaseService: SupabaseService,
   ) {}
 
   @Cron('*/5 * * * *') // Every 5 minutes
   async updateAggregators() {
-    const aggregators = await this.aggregatorRepo.find();
+    const aggregators = await this.supabaseService.findAggregators();
 
     for (const agg of aggregators) {
       try {
@@ -22,15 +23,40 @@ export class CronService {
           EACAggregatorProxyABI,
         );
 
-        // Implement your custom update logic
-        const tx = await contract.updatePrice();
+        // Fetch latest price from source API
+        const response = await fetch(agg.sourceAPI);
+        const data = await response.json();
+        const price = this.extractPriceFromResponse(data, agg.oracleType);
+
+        // Update the price on-chain
+        const tx = await contract.updatePrice(price);
         await tx.wait();
 
-        // Log successful update
-        // this.logUpdate(agg, true);
+        // Update the lastUpdated timestamp in Supabase
+        await this.supabaseService.updateAggregator(agg.id, {
+          lastUpdated: new Date().toISOString(),
+        });
+
+        console.log(`Updated price for ${agg.contractAddress}: ${price}`);
       } catch (error) {
-        // this.logUpdate(agg, false, error.message);
+        console.error(
+          `Failed to update ${agg.contractAddress}: ${error.message}`,
+        );
       }
+    }
+  }
+
+  private extractPriceFromResponse(data: any, oracleType: number): number {
+    // Convert numeric oracle type to appropriate data extraction strategy
+    switch (oracleType) {
+      case OracleType.PublicSubscribable:
+      case OracleType.PublicFree:
+        return data.price || data.value || 0;
+      case OracleType.Private:
+        // Maybe more complex extraction for private oracles
+        return data.price || data.value || 0;
+      default:
+        return 0;
     }
   }
 }

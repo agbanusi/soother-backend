@@ -5,9 +5,16 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { FactoryModule } from './factory/factory.module';
 import { CronModule } from './cron/cron.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
-  imports: [SubscriptionsModule, DashboardModule, FactoryModule, CronModule],
+  imports: [
+    CommonModule,
+    SubscriptionsModule,
+    DashboardModule,
+    FactoryModule,
+    CronModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

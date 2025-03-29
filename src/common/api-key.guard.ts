@@ -1,4 +1,5 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 // api-key.guard.ts
 @Injectable()

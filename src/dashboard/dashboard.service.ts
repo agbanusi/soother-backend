@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { BlockchainService } from 'src/common/blockchain.service';
+import { SupabaseService } from 'src/common/supabase.service';
+import { EACAggregatorProxyABI } from 'src/common/contract-abis';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private readonly blockchainService: BlockchainService,
-    @InjectRepository(Aggregator)
-    private aggregatorRepo: Repository<Aggregator>,
+    private readonly supabaseService: SupabaseService,
   ) {}
 
   async getUserData(address: string) {
@@ -19,6 +21,11 @@ export class DashboardService {
         lastUpdated: agg.lastUpdated,
       })),
     );
+  }
+
+  private async getSubscriptions(address: string): Promise<any[]> {
+    // Find subscriptions for the user from Supabase
+    return this.supabaseService.findAggregatorsByOwner(address);
   }
 
   private async getLatestData(contractAddress: string) {
