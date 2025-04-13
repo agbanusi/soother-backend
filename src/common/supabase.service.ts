@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+require('dotenv').config()
 
 @Injectable()
 export class SupabaseService {

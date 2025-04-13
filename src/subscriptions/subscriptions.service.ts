@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BlockchainService } from 'src/common/blockchain.service';
+import { SubscriptionManagementABI } from 'src/common/contract-abis';
+import { SupabaseService } from 'src/common/supabase.service';
 
 // Define required constants
 const SUBSCRIPTION_MANAGER_ADDRESS =
@@ -7,32 +9,81 @@ const SUBSCRIPTION_MANAGER_ADDRESS =
   '0x0000000000000000000000000000000000000000';
 const ONE_YEAR_SECONDS = 31536000; // 365 days in seconds
 
-// ABI for the SubscriptionManagement contract
-const SubscriptionManagementABI = [
-  'function subscriptionPrices(address) view returns (uint256)',
-  'function purchaseSubscription(address oracle, uint256 duration) payable',
-];
-
 @Injectable()
 export class SubscriptionService {
-  constructor(private readonly blockchainService: BlockchainService) {}
+  constructor(
+    private readonly blockchainService: BlockchainService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   async generateTxData(oracleAddress: string, duration: number) {
-    const contract = this.blockchainService.getContract(
-      SUBSCRIPTION_MANAGER_ADDRESS,
+    const subscriptionManager = this.blockchainService.getContract(
+      process.env.SUBSCRIPTION_MANAGER_ADDRESS,
       SubscriptionManagementABI,
     );
 
-    const price = await contract.subscriptionPrices(oracleAddress);
+    const price = await subscriptionManager.subscriptionPrices(oracleAddress);
     const value = price.mul(duration).div(ONE_YEAR_SECONDS);
 
     return {
-      to: SUBSCRIPTION_MANAGER_ADDRESS,
-      data: contract.interface.encodeFunctionData('purchaseSubscription', [
-        oracleAddress,
-        duration,
-      ]),
+      to: process.env.SUBSCRIPTION_MANAGER_ADDRESS,
+      data: subscriptionManager.interface.encodeFunctionData(
+        'purchaseSubscription',
+        [oracleAddress, duration],
+      ),
       value: value.toString(),
     };
+  }
+
+  async getActiveSubscriptions(address: string) {
+    const allOracles = await this.supabaseService.findAggregators();
+    const subscriptionManager = this.blockchainService.getContract(
+      process.env.SUBSCRIPTION_MANAGER_ADDRESS,
+      SubscriptionManagementABI,
+    );
+
+    const activeSubscriptions = await Promise.all(
+      allOracles.map(async (oracle) => {
+        const isActive = await subscriptionManager.isActiveSubscription(
+          address,
+          oracle.contractAddress,
+        );
+        if (!isActive) return null;
+
+        const expiry = await this.getSubscriptionExpiry(
+          oracle.contractAddress,
+          address,
+        );
+        return {
+          ...oracle,
+          expiryDate: new Date(Number(expiry) * 1000),
+        };
+      }),
+    );
+
+    return activeSubscriptions.filter(Boolean);
+  }
+
+  async getSubscriptionPrice(oracleAddress: string) {
+    const subscriptionManager = this.blockchainService.getContract(
+      process.env.SUBSCRIPTION_MANAGER_ADDRESS,
+      SubscriptionManagementABI,
+    );
+
+    const price = await subscriptionManager.subscriptionPrices(oracleAddress);
+    return price.toString();
+  }
+
+  async getSubscriptionExpiry(oracleAddress: string, subscriber: string) {
+    const subscriptionManager = this.blockchainService.getContract(
+      process.env.SUBSCRIPTION_MANAGER_ADDRESS,
+      SubscriptionManagementABI,
+    );
+
+    const expiry = await subscriptionManager.subscriptions(
+      oracleAddress,
+      subscriber,
+    );
+    return expiry.toString();
   }
 }

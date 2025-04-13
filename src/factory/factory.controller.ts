@@ -1,7 +1,6 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { FactoryService } from './factory.service';
 import { AuthGuard } from '@nestjs/passport';
-import { OracleType } from './entities/aggregator.entity';
 
 // Define the DTO in-line or import from a separate file
 interface DeployAggregatorDto {
