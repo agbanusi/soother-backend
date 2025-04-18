@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BlockchainService } from 'src/common/blockchain.service';
-import { SupabaseService } from 'src/common/supabase.service';
+import { BlockchainService } from '../common/blockchain.service';
+import { SupabaseService } from '../common/supabase.service';
 import {
   EACAggregatorProxyABI,
   SubscriptionManagementABI,
-} from 'src/common/contract-abis';
-import { OracleType } from 'src/factory/entities/aggregator.entity';
+} from '../common/contract-abis';
+import { OracleType } from '../factory/entities/aggregator.entity';
 
 @Injectable()
 export class DashboardService {

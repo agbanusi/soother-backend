@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SubscriptionService } from './subscriptions.service';
 import { PurchaseSubscriptionDto } from './dto/purchase-subscription.dto';
-import { ApiKeyGuard } from 'src/common/api-key.guard';
+import { ApiKeyGuard } from '../common/api-key.guard';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')

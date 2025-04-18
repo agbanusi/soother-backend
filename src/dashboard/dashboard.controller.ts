@@ -7,7 +7,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
-import { ApiKeyGuard } from 'src/common/api-key.guard';
+import { ApiKeyGuard } from '../common/api-key.guard';
 
 @ApiTags('dashboard')
 @Controller('dashboard')

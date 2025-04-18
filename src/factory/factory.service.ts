@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BlockchainService } from 'src/common/blockchain.service';
-import { SupabaseService } from 'src/common/supabase.service';
+import { BlockchainService } from '../common/blockchain.service';
+import { SupabaseService } from '../common/supabase.service';
 import { OracleType } from './entities/aggregator.entity';
 
 // DTO for deploying a new aggregator

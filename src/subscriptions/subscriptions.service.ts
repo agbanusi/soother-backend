@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { BlockchainService } from 'src/common/blockchain.service';
-import { SubscriptionManagementABI } from 'src/common/contract-abis';
-import { SupabaseService } from 'src/common/supabase.service';
+import { BlockchainService } from '../common/blockchain.service';
+import { SubscriptionManagementABI } from '../common/contract-abis';
+import { SupabaseService } from '../common/supabase.service';
 
 // Define required constants
 const SUBSCRIPTION_MANAGER_ADDRESS =
