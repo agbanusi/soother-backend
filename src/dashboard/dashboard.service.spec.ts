@@ -65,11 +65,16 @@ describe('DashboardService', () => {
           owner: '0x123',
           subscriptionPrice: '1000000000000000000',
           isActive: true,
+          lastUpdated: expect.any(Date),
+          currentPrice: '100000000',
         },
       ];
 
       mockSupabaseService.findAggregatorsByOwner.mockResolvedValue(mockOracles);
       mockSupabaseService.findAggregators.mockResolvedValue(mockOracles);
+      // skip 5 minutes time
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(Date.now() + 10 * 60 * 1000));
 
       const result = await service.getUserData(address);
 
@@ -100,6 +105,8 @@ describe('DashboardService', () => {
         sourceAPI: 'https://api.example.com',
         owner: '0x123',
         subscriptionPrice: '1000000000000000000',
+        lastUpdated: expect.any(Date),
+        currentPrice: '100000000',
       };
 
       mockSupabaseService.findAggregators.mockResolvedValue([mockAggregator]);
@@ -110,7 +117,7 @@ describe('DashboardService', () => {
         currentPrice: '100000000',
         lastUpdate: expect.any(Date),
         updateFrequency: '5 minutes',
-        type: 'PublicSubscribable',
+        type: 'PublicFree',
         sourceAPI: 'https://api.example.com',
         owner: '0x123',
         subscriptionPrice: '1000000000000000000',

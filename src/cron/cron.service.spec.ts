@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CronService } from './cron.service';
 import { BlockchainService } from '../common/blockchain.service';
 import { SupabaseService } from '../common/supabase.service';
+import { OracleType } from '../factory/entities/aggregator.entity';
 
 describe('CronService', () => {
   let service: CronService;
@@ -45,7 +46,7 @@ describe('CronService', () => {
     // Mock global fetch
     global.fetch = jest.fn(() =>
       Promise.resolve({
-        json: () => Promise.resolve({ price: 100000000 }),
+        json: () => Promise.resolve({ price: 100 }),
       }),
     ) as jest.Mock;
   });
@@ -64,14 +65,14 @@ describe('CronService', () => {
         {
           id: 1,
           contractAddress: '0x456',
-          oracleType: 1,
+          oracleType: OracleType.PublicSubscribable,
           sourceAPI: 'https://api.example.com',
           owner: '0x123',
         },
         {
           id: 2,
           contractAddress: '0x789',
-          oracleType: 2,
+          oracleType: OracleType.PublicFree,
           sourceAPI: 'https://api2.example.com',
           owner: '0x123',
         },
@@ -93,7 +94,7 @@ describe('CronService', () => {
         {
           id: 1,
           contractAddress: '0x456',
-          oracleType: 1,
+          oracleType: OracleType.PublicSubscribable,
           sourceAPI: 'https://api.example.com',
           owner: '0x123',
         },
@@ -114,7 +115,7 @@ describe('CronService', () => {
         {
           id: 1,
           contractAddress: '0x456',
-          oracleType: 1,
+          oracleType: OracleType.PublicSubscribable,
           sourceAPI: 'https://api.example.com',
           owner: '0x123',
         },
@@ -135,21 +136,21 @@ describe('CronService', () => {
         {
           id: 1,
           contractAddress: '0x456',
-          oracleType: 1, // PublicSubscribable
+          oracleType: OracleType.PublicSubscribable, // 0
           sourceAPI: 'https://api.example.com',
           owner: '0x123',
         },
         {
           id: 2,
           contractAddress: '0x789',
-          oracleType: 2, // PublicFree
+          oracleType: OracleType.PublicFree, // 1
           sourceAPI: 'https://api2.example.com',
           owner: '0x123',
         },
         {
           id: 3,
           contractAddress: '0xabc',
-          oracleType: 3, // Private
+          oracleType: OracleType.Private, // 2
           sourceAPI: 'https://api3.example.com',
           owner: '0x123',
         },
@@ -160,7 +161,7 @@ describe('CronService', () => {
       // Mock different API responses
       global.fetch = jest.fn().mockImplementation((url) => {
         const responses = {
-          'https://api.example.com': { price: 100 },
+          'https://api.example.com': { price: 1 },
           'https://api2.example.com': { value: 200 },
           'https://api3.example.com': { price: 300 },
         };
@@ -171,9 +172,11 @@ describe('CronService', () => {
 
       await service.updateAggregators();
 
-      expect(mockContract.updatePrice).toHaveBeenCalledWith(100);
-      expect(mockContract.updatePrice).toHaveBeenCalledWith(200);
-      expect(mockContract.updatePrice).toHaveBeenCalledWith(300);
+      // Verify the calls to updatePrice with the correct format for each type
+      const updatePriceCalls = mockContract.updatePrice.mock.calls;
+      expect(updatePriceCalls[0][0]).toBe('100000000'); // PublicSubscribable: scaled and string
+      expect(updatePriceCalls[1][0]).toBe(200); // PublicFree: raw number
+      expect(updatePriceCalls[2][0]).toBe(300); // Private: raw number
     });
   });
 });

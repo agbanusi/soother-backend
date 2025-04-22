@@ -46,15 +46,20 @@ export class CronService {
     }
   }
 
-  private extractPriceFromResponse(data: any, oracleType: number): number {
-    // Convert numeric oracle type to appropriate data extraction strategy
+  private extractPriceFromResponse(
+    data: any,
+    oracleType: OracleType,
+  ): string | number {
+    const rawPrice = data.price || data.value || 0;
+
     switch (oracleType) {
       case OracleType.PublicSubscribable:
+        // For PublicSubscribable, return price scaled to 8 decimals as string
+        return (rawPrice * 100000000).toString();
       case OracleType.PublicFree:
-        return data.price || data.value || 0;
       case OracleType.Private:
-        // Maybe more complex extraction for private oracles
-        return data.price || data.value || 0;
+        // For other types, return the raw number
+        return rawPrice;
       default:
         return 0;
     }

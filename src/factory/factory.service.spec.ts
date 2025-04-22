@@ -64,6 +64,8 @@ describe('FactoryService', () => {
         oracleType: 1,
         sourceAPI: 'https://api.example.com',
         owner: '0x123',
+        subscriptionPrice: parseFloat(dto.subscriptionPrice),
+        lastUpdated: new Date(),
       });
 
       const result = await service.deployNewAggregator(dto);
@@ -87,6 +89,8 @@ describe('FactoryService', () => {
         oracleType: dto.oracleType,
         sourceAPI: dto.sourceAPI,
         owner: dto.owner,
+        subscriptionPrice: parseFloat(dto.subscriptionPrice),
+        lastUpdated: new Date(),
       });
 
       expect(result).toEqual({
@@ -95,6 +99,8 @@ describe('FactoryService', () => {
         oracleType: 1,
         sourceAPI: 'https://api.example.com',
         owner: '0x123',
+        subscriptionPrice: '1000000000000000000',
+        lastUpdated: new Date(),
       });
     });
 
@@ -106,6 +112,8 @@ describe('FactoryService', () => {
         subscriptionPrice: '1000000000000000000',
         sourceAPI: 'https://api.example.com',
         owner: '0x123',
+        lastUpdated: new Date(),
+        currentPrice: '100000000',
       };
 
       await expect(service.deployNewAggregator(dto)).rejects.toThrow(
